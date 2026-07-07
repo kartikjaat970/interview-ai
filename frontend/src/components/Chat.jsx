@@ -9,20 +9,35 @@ export default function Chat() {
   const [score, setScore] = useState(0);
 
   const send = async (text) => {
-    const next = [...messages, { author: "You", text }];
-    setMessages(next);
+    if (!text.trim()) return;
 
-    const res = await api.post("/interview", { message: text });
+    const userMsgId = `user-${Date.now()}`;
+    const aiMsgId = `ai-${Date.now()}`;
 
-    setMessages([...next, { author: "AI", text: res.data.question }]);
-    setScore(res.data.score);
+    setMessages((prev) => [...prev, { id: userMsgId, author: "You", text }]);
+
+    try {
+      const res = await api.post("/interview", { message: text });
+
+      setMessages((prev) => [
+        ...prev,
+        { id: aiMsgId, author: "AI", text: res.data.question }
+      ]);
+      setScore(res.data.score);
+    } catch (error) {
+      console.error(error);
+      setMessages((prev) => [
+        ...prev,
+        { id: `err-${Date.now()}`, author: "System", text: "Error connecting to server." }
+      ]);
+    }
   };
 
   return (
     <div>
       <div className="chat">
-        {messages.map((m, i) => (
-          <Message key={i} author={m.author} text={m.text} />
+        {messages.map((m) => (
+          <Message key={m.id} author={m.author} text={m.text} />
         ))}
       </div>
       <Input send={send} />
