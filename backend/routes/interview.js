@@ -1,29 +1,27 @@
 const express = require("express");
 const { reply } = require("../services/interviewer");
 const { score } = require("../services/scorer");
-const sessionsStorage = require("../storage/sessions");
 
 const router = express.Router();
 
-router.post("/interview", (req, res) => {
-  const { message } = req.body;
+router.post("/interview", async (req, res) => {
+  const { message, sessionId = "default-session" } = req.body;
 
   if (!message || !message.trim()) {
     return res.status(400).json({ error: "Message is required" });
   }
 
-  const ai = reply(message);
-  const rating = score(message);
+  try {
+    const ai = await reply(sessionId, message);
+    const rating = score(message);
 
-  sessionsStorage.create({
-    message,
-    score: rating
-  });
-
-  res.json({
-    question: ai.answer,
-    score: rating
-  });
+    res.json({
+      question: ai.answer,
+      score: rating
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 module.exports = router;
