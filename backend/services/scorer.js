@@ -1,15 +1,16 @@
 function score(text) {
+  const lower = text.toLowerCase();
   let value = 50;
 
   if (text.length > 100) {
     value += 20;
   }
 
-  if (text.includes("example")) {
+  if (lower.includes("example")) {
     value += 10;
   }
 
-  if (text.includes("team")) {
+  if (lower.includes("team")) {
     value += 10;
   }
 

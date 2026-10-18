@@ -2,7 +2,28 @@
 
 InterviewAI is a full-stack, modular technical interview preparation platform designed to help software engineers practice behavioral and mock coding questions.
 
-> **Current Status Note:** This platform is currently operating on predictable, mock algorithmic rules to evaluate text inputs and shuffle text blocks. Real generative LLM artificial intelligence models (such as Google Gemini or OpenAI) will be added in a future development phase.
+> **Current Status Note:** The interviewer is powered by Google Gemini (`gemini-2.5-flash` by default) and keeps per-session conversation history in memory. Answer scoring is still a simple rule-based heuristic (see `scorer.js`).
+
+---
+
+## Getting Started
+
+**Requirements:** Node.js 20+ and a Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey).
+
+```bash
+# 1. Backend (http://localhost:8000)
+cd backend
+npm install
+cp .env.example .env      # then put your key in GEMINI_API_KEY
+npm start
+
+# 2. Frontend (http://localhost:3000) - in a second terminal
+cd frontend
+npm install
+npm start
+```
+
+If the backend can't reach Gemini (for example a missing or invalid key), the chat shows the error instead of a fake interviewer reply.
 
 ---
 
@@ -33,9 +54,9 @@ interview-ai/
 *   **`routes/interview.js`**  
     Acts as the entry router controller for the core endpoint (`POST /interview`). It accepts user answer text payloads, triggers downstream scoring modules, tracks sessions, and returns JSON packages.
 *   **`services/interviewer.js`**  
-    Houses a static deck array containing 4 predefined sample interview questions. It selects a prompt using a pseudo-random deck shuffler (`Math.random()`) to act as the interviewer.
+    Calls the Gemini API with a senior-interviewer system prompt and the session's chat history, so each follow-up question builds on earlier answers. The API key is read from `GEMINI_API_KEY` (via `backend/.env`). It throws on failure so callers can report the error, and history is capped to the most recent 40 messages.
 *   **`services/scorer.js`**  
-    Runs a deterministic string calculation function. It parses the incoming answer text and awards score modifiers up to a limit of 100 based strictly on hardcoded character length goals and specific case-sensitive keyword checks ("example", "team").
+    Runs a deterministic string calculation function. It starts at 50 and adds points for answers longer than 100 characters and for the keywords "example" and "team" (case-insensitive), for a maximum of 90.
 *   **`storage/sessions.js`**  
     Acts as a lightweight, volatile in-memory database simulation using local JavaScript arrays. It exposes basic CRUD utility functions (`create`, `list`, `find`, `remove`) to record user history during execution runtime.
 *   **`websocket/socket.js`**  
@@ -58,6 +79,6 @@ interview-ai/
 *   **`src/components/Input.jsx`**  
     A controlled form field capturing user answers. It clears user keystrokes upon submission and hooks into `Enter` key keydowns for smoother user experience.
 *   **`src/components/Message.jsx`**  
-    A pure presentation UI block designed to distinguish speech bubbles between the candidate and the mock interviewer using clear accent borders.
+    A pure presentation UI block designed to distinguish speech bubbles between the candidate and the AI interviewer using clear accent borders.
 *   **`src/components/Score.jsx`**  
-    An interface panel that tracks points metrics dynamically and alters highlight colors (red, yellow, green) based on performance bands.
+    An interface panel that displays the current score returned by the backend.

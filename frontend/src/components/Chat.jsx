@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import api from "../api";
 import Message from "./Message";
 import Input from "./Input";
 import Score from "./Score";
 
-// Generate a random session ID once when the app loads to track this specific interview chat
-const CURRENT_SESSION_ID = `session-${Math.random().toString(36).substr(2, 9)}`;
+// One session ID per page load, used to keep this interview's history together
+const CURRENT_SESSION_ID =
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? `session-${crypto.randomUUID()}`
+    : `session-${Math.random().toString(36).slice(2, 11)}`;
 
 export default function Chat() {
   // Initialize with a welcome message from the AI interviewer
@@ -13,39 +16,53 @@ export default function Chat() {
     {
       id: "welcome",
       author: "AI",
-      text: "Hello! Welcome to your technical interview. To get started, could you briefly introduce yourself and tell me what role you are interviewing for?"
-    }
+      text: "Hello! Welcome to your technical interview. To get started, could you briefly introduce yourself and tell me what role you are interviewing for?",
+    },
   ]);
   const [score, setScore] = useState(50);
+  const [loading, setLoading] = useState(false);
+
+  const nextId = useRef(0);
+  const bottomRef = useRef(null);
+
+  // Keep the newest message in view
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, loading]);
+
+  const newId = (prefix) => `${prefix}-${nextId.current++}`;
 
   const send = async (text) => {
-    if (!text.trim()) return;
+    if (!text.trim() || loading) return;
 
-    const userMsgId = `user-${Date.now()}`;
-    const aiMsgId = `ai-${Date.now()}`;
-
-    // 1. Instantly display user's text on screen
-    setMessages((prev) => [...prev, { id: userMsgId, author: "You", text }]);
+    // 1. Instantly display the user's text
+    setMessages((prev) => [...prev, { id: newId("user"), author: "You", text }]);
+    setLoading(true);
 
     try {
-      // 2. Send the message along with our unique tracking session ID
-      const res = await api.post("/interview", { 
+      // 2. Send the message along with our session ID
+      const res = await api.post("/interview", {
         message: text,
-        sessionId: CURRENT_SESSION_ID
+        sessionId: CURRENT_SESSION_ID,
       });
 
-      // 3. Append the dynamic AI follow-up question and update the rating score
+      // 3. Append the AI follow-up question and update the rating score
       setMessages((prev) => [
         ...prev,
-        { id: aiMsgId, author: "AI", text: res.data.question }
+        { id: newId("ai"), author: "AI", text: res.data.question },
       ]);
       setScore(res.data.score);
     } catch (error) {
       console.error(error);
+      // Show the server's reason when there is one (e.g. missing API key / AI down)
+      const reason =
+        error.response?.data?.error || "Error connecting to server.";
       setMessages((prev) => [
         ...prev,
-        { id: `err-${Date.now()}`, author: "System", text: "Error connecting to server." }
+        { id: newId("err"), author: "System", text: reason },
       ]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,8 +72,10 @@ export default function Chat() {
         {messages.map((m) => (
           <Message key={m.id} author={m.author} text={m.text} />
         ))}
+        {loading && <Message author="AI" text="Thinking..." />}
+        <div ref={bottomRef} />
       </div>
-      <Input send={send} />
+      <Input send={send} disabled={loading} />
       <Score value={score} />
     </div>
   );
