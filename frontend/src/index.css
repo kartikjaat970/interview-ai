@@ -122,6 +122,12 @@ button:hover {
   border-color: #555562;
 }
 
+button:disabled,
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Score Readout Status */
 h3 {
   color: #ffffff;

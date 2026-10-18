@@ -2,8 +2,9 @@
   "name": "interview-ai",
   "version": "1.0.0",
   "dependencies": {
-    "@google/genai": "^0.1.2",
+    "@google/genai": ">=1.0.0 <3.0.0",
     "cors": "^2",
+    "dotenv": "^16",
     "express": "^4",
     "socket.io": "^4"
   },
