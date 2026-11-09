@@ -1,5 +1,7 @@
 # InterviewAI
 
+[![Architecture diagram of kartikjaat970/interview-ai](https://gitdiagram.com/kartikjaat970/interview-ai/diagram.png)](https://gitdiagram.com/kartikjaat970/interview-ai?utm_source=readme&utm_medium=picture)
+
 InterviewAI is a full-stack, modular technical interview preparation platform designed to help software engineers practice behavioral and mock coding questions.
 
 > **Current Status Note:** The interviewer is powered by Google Gemini (`gemini-2.5-flash` by default) and keeps per-session conversation history in memory. Answer scoring is still a simple rule-based heuristic (see `scorer.js`).
