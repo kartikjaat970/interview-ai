@@ -1,3 +1,4 @@
 import { io } from "socket.io-client";
-
-export default io("http://localhost:8000");
+import { backendUrl } from "./api";
+ 
+export default io(backendUrl());
